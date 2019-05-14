@@ -4,102 +4,91 @@ const router = express.Router();
 
 const db = require("../data/db.js");
 
-router.get("/", (req, res) => {
-  db.find()
-    .then(response => {
-      res.status(200).json({ data: response });
-    })
-    .catch(err => {
-      console.log(err);
-      res
-        .status(500)
-        .json({ error: "The information could not be retrieved." });
-    });
+router.get("/", async (req, res) => {
+  try {
+    const data = await db.find();
+    res.status(200).json({ data });
+  } catch (err) {
+    res
+      .status(500)
+      .json({ err, message: "The information could not be retrieved." });
+  }
 });
 
-router.get("/:id", (req, res) => {
+router.get("/:id", async (req, res) => {
   const id = req.params.id;
-  db.findById(id)
-    .then(response => {
-      if (!response.length) {
-        res
-          .status(404)
-          .json({ error: "The post with the specified ID does not exist." });
-      }
-      res.status(200).json({ data: response });
-    })
-    .catch(err => {
-      console.log(err);
+  try {
+    const data = await db.findById(id);
+    if (!data.length) {
       res
-        .status(500)
-        .json({ error: "The post information could not be retrieved." });
-    });
+        .status(404)
+        .json({ error: "The post with the specified ID does not exist." });
+    }
+    res.status(200).json({ data });
+  } catch (err) {
+    res
+      .status(500)
+      .json({ err, error: "The post information could not be retrieved." });
+  }
 });
 
-router.delete("/:id", (req, res) => {
+router.delete("/:id", async (req, res) => {
   const id = req.params.id;
-  db.remove(id)
-    .then(response => {
-      if (!response) {
-        res
-          .status(404)
-          .json({ error: "The post with the specified ID does not exist. " });
-      }
-      res.status(204).json({ data: response });
-    })
-    .catch(err => {
-      console.log(err);
-      res.status(500).json({ error: "The post could not be removed" });
-    });
+  try {
+    const data = await db.remove(id);
+    if (!data) {
+      res
+        .status(404)
+        .json({ error: "The post with the specified ID does not exist. " });
+    }
+    res.status(204).json({ data });
+  } catch (err) {
+    res.status(500).json({ error: "The post could not be removed" });
+  }
 });
 
-router.put("/:id", (req, res) => {
+router.put("/:id", async (req, res) => {
   const id = req.params.id;
   const { title, contents } = req.body;
 
-  db.update(id, { title, contents })
-    .then(response => {
-      if (!response) {
-        res
-          .status(404)
-          .json({ error: "The post with the specified ID does not exist." });
-      } else if (title === undefined || contents === undefined) {
-        res
-          .status(400)
-          .json({ error: "Please provide title and contents for the post." });
-      } else {
-        res.status(201).json({ data: response });
-      }
-    })
-    .catch(err => {
-      console.log(err);
+  try {
+    const data = await db.update(id, { title, contents });
+    if (!data) {
       res
-        .status(500)
-        .json({ error: "The post information could not be modified." });
-    });
+        .status(404)
+        .json({ error: "The post with the specified ID does not exist." });
+    } else if (title === undefined || contents === undefined) {
+      res
+        .status(400)
+        .json({ error: "Please provide title and contents for the post." });
+    } else {
+      res.status(201).json({ data });
+    }
+  } catch (err) {
+    res
+      .status(500)
+      .json({ error: "The post information could not be modified." });
+  }
 });
 
-router.post("/", (req, res) => {
+router.post("/", async (req, res) => {
   const { title, contents } = req.body;
 
-  db.insert({ title, contents })
-    .then(response => {
-      console.log(response);
-      if (!title || !contents) {
-        res
-          .status(400)
-          .json({ error: "Please provide title and contents for the post." });
-        return;
-      } else {
-        res.status(201).json({ data: response });
-      }
-    })
-    .catch(err => {
-      console.log(err);
-      res.status(500).json({
-        error: "There was an error while saving the post to the database"
-      });
+  try {
+    const data = await db.insert({ title, contents });
+    if (!title || !contents) {
+      res
+        .status(400)
+        .json({ error: "Please provide title and contents for the post." });
+      return;
+    } else {
+      res.status(201).json({ data });
+    }
+  } catch (err) {
+    res.status(500).json({
+      error: "There was an error while saving the post to the database"
     });
+  }
 });
 
 module.exports = router;
